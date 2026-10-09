@@ -71,4 +71,11 @@ dependencies {
 
     // أدوات التطوير
     debugImplementation("androidx.compose.ui:ui-tooling")
+
+    // Glance Widgets
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
+
+// WorkManager (للإشعارات)
+    implementation(libs.androidx.work.runtime.ktx)
 }

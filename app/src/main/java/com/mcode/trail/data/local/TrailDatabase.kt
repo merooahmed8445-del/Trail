@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [Bookmark::class],
-    version = 2,
+    version = 3,                    // ← من 2 لـ 3
     exportSchema = false
 )
 abstract class TrailDatabase : RoomDatabase() {
@@ -24,7 +24,9 @@ abstract class TrailDatabase : RoomDatabase() {
                     context.applicationContext,
                     TrailDatabase::class.java,
                     "trail_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()  // ← ✨ جديد (dev only)
+                    .build()
                 INSTANCE = instance
                 instance
             }

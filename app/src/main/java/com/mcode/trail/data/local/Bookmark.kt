@@ -12,5 +12,7 @@ data class Bookmark(
     val note: String,
     val type: String,
     val imageUrl: String? = null,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    // ✨ الجديد
+    val isFavorite: Boolean = false
 )

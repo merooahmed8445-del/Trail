@@ -25,4 +25,18 @@ object LinkTypeHelper {
             else -> Icons.Default.Article to ArticleColor
         }
     }
+
+    /**
+     * اسم مختصر للنوع — للعرض كـ Badge ملون
+     */
+    fun getShortName(type: String): String {
+        return when (type) {
+            "github" -> "GitHub"
+            "youtube" -> "YouTube"
+            "twitter" -> "X / Twitter"
+            "medium" -> "Medium"
+            "stackoverflow" -> "Stack"
+            else -> "مقال"
+        }
+    }
 }

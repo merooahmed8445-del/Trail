@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">أثر</string>
+    <string name="share_label">حفظ في أثر</string>
+    <string name="widget_label">أثر - الروابط المحفوظة</string>
+    <string name="widget_description">آخر الروابط المحفوظة في أثر</string>
 </resources>

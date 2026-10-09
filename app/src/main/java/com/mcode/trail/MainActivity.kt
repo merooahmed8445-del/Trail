@@ -31,21 +31,26 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // ✨ قراءة الـ bookmark_id من الـ Intent (Deep Link)
+        val bookmarkId = if (intent?.action == "com.mcode.trail.OPEN_BOOKMARK") {
+            intent.getLongExtra("bookmark_id", -1L).takeIf { it > 0 }
+        } else null
+
         setContent {
-            TrailRoot()
+            TrailRoot(initialBookmarkId = bookmarkId)
         }
     }
 }
 
 @Composable
-fun TrailRoot() {
+fun TrailRoot(initialBookmarkId: Long? = null) {
     val context = LocalContext.current
     val themePrefs = remember { ThemePreferences(context) }
     val scope = rememberCoroutineScope()
 
     val savedDarkMode by themePrefs.isDarkMode.collectAsState(initial = null)
     val systemDark = isSystemInDarkTheme()
-
     val isDark = savedDarkMode ?: systemDark
 
     var showSplash by rememberSaveable { mutableStateOf(true) }
@@ -61,10 +66,9 @@ fun TrailRoot() {
                 TrailNav(
                     isDarkTheme = isDark,
                     onToggleTheme = { newValue ->
-                        scope.launch {
-                            themePrefs.setDarkMode(newValue)
-                        }
-                    }
+                        scope.launch { themePrefs.setDarkMode(newValue) }
+                    },
+                    initialBookmarkId = initialBookmarkId
                 )
             }
         }
@@ -75,18 +79,18 @@ fun TrailRoot() {
 fun TrailNav(
     isDarkTheme: Boolean,
     onToggleTheme: (Boolean) -> Unit,
+    initialBookmarkId: Long? = null,
     viewModel: BookmarkViewModel = viewModel()
 ) {
-    // ← rememberSaveable بدل remember عشان تفضل عند الـ rotation
-    var selectedBookmarkId by rememberSaveable { mutableStateOf<Long?>(null) }
-
+    var selectedBookmarkId by rememberSaveable {
+        mutableStateOf<Long?>(initialBookmarkId)
+    }
     val allBookmarks by viewModel.bookmarks.collectAsState()
 
     val currentBookmark = selectedBookmarkId?.let { id ->
         allBookmarks.find { it.id == id }
     }
 
-    // ← BackHandler: لما تكون في Detail و المستخدم يعمل سحب/زر رجوع → يرجع للـ Home
     BackHandler(enabled = currentBookmark != null) {
         selectedBookmarkId = null
     }

@@ -10,6 +10,9 @@ class BookmarkRepository(private val dao: BookmarkDao) {
 
     suspend fun insert(bookmark: Bookmark): Long = dao.insert(bookmark)
 
+    // ✨ جديد
+    suspend fun insertAll(bookmarks: List<Bookmark>) = dao.insertAll(bookmarks)
+
     suspend fun update(bookmark: Bookmark) = dao.update(bookmark)
 
     suspend fun delete(bookmark: Bookmark) = dao.delete(bookmark)

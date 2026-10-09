@@ -20,9 +20,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -46,10 +51,11 @@ import com.mcode.trail.data.local.Bookmark
 fun BookmarkCard(
     bookmark: Bookmark,
     onClick: () -> Unit,
+    onToggleFavorite: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // ← استخدمنا الـ helper الموحد
     val (icon, color) = LinkTypeHelper.getIconAndColor(bookmark.type)
+    val typeName = LinkTypeHelper.getShortName(bookmark.type)
 
     var isPressed by remember { mutableStateOf(false) }
 
@@ -59,7 +65,6 @@ fun BookmarkCard(
         label = "scale"
     )
 
-    // ← شلنا AnimatedVisibility + LaunchedEffect + delay(index * 50)
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -78,7 +83,7 @@ fun BookmarkCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
-            // ===== الصورة المصغرة =====
+            // ═══ الصورة المصغرة ═══
             if (!bookmark.imageUrl.isNullOrBlank()) {
                 AsyncImage(
                     model = bookmark.imageUrl,
@@ -91,12 +96,13 @@ fun BookmarkCard(
                 )
             }
 
-            // ===== محتوى الكارت =====
+            // ═══ محتوى الكارت ═══
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(IntrinsicSize.Min)
             ) {
+                // ── الشريط الجانبي الملون ──
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
@@ -110,9 +116,10 @@ fun BookmarkCard(
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // ── أيقونة النوع ──
                     Box(
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(44.dp)
                             .clip(CircleShape)
                             .background(color.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
@@ -121,26 +128,38 @@ fun BookmarkCard(
                             imageVector = icon,
                             contentDescription = null,
                             tint = color,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(14.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
 
+                    // ── المحتوى ──
                     Column(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Text(
-                            text = UrlUtils.getDisplayName(bookmark.type),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = color,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 11.sp
-                        )
+                        // ✨ Badge ملون (Chip صغير)
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(color.copy(alpha = 0.15f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = typeName,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = color,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp
+                            )
+                        }
 
+                        // ── العنوان ──
                         Text(
-                            text = bookmark.title.ifBlank { UrlUtils.getShortUrl(bookmark.url) },
+                            text = bookmark.title.ifBlank {
+                                UrlUtils.getShortUrl(bookmark.url)
+                            },
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -148,6 +167,7 @@ fun BookmarkCard(
                             overflow = TextOverflow.Ellipsis
                         )
 
+                        // ── الملاحظة ──
                         if (bookmark.note.isNotBlank()) {
                             Text(
                                 text = bookmark.note,
@@ -158,13 +178,33 @@ fun BookmarkCard(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(2.dp))
-
+                        // ── الوقت ──
                         Text(
                             text = UrlUtils.formatTimeAgo(bookmark.createdAt),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 11.sp
+                        )
+                    }
+
+                    // ── نجمة المفضلة ──
+                    IconButton(onClick = onToggleFavorite) {
+                        Icon(
+                            imageVector = if (bookmark.isFavorite) {
+                                Icons.Filled.Star
+                            } else {
+                                Icons.Outlined.StarBorder
+                            },
+                            contentDescription = if (bookmark.isFavorite) {
+                                "إزالة من المفضلة"
+                            } else {
+                                "إضافة للمفضلة"
+                            },
+                            tint = if (bookmark.isFavorite) {
+                                Color(0xFFE8B86D)
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            }
                         )
                     }
                 }

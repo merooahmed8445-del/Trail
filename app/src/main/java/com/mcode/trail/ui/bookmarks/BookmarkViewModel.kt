@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -20,13 +21,35 @@ class BookmarkViewModel(application: Application) : AndroidViewModel(application
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    // ← القائمة الأصلية (كل الـ bookmarks)
+    private val allBookmarks: StateFlow<List<Bookmark>>
+
+    // ← القائمة المعروضة (بعد الفلترة)
     val bookmarks: StateFlow<List<Bookmark>>
 
     init {
         val dao = (application as TrailApp).database.bookmarkDao()
         repository = BookmarkRepository(dao)
 
-        bookmarks = repository.allBookmarks.stateIn(
+        allBookmarks = repository.allBookmarks.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+        // ← الفلترة الفعلية: ندمج الـ bookmarks + searchQuery
+        bookmarks = combine(allBookmarks, _searchQuery) { list, query ->
+            if (query.isBlank()) {
+                list
+            } else {
+                val q = query.trim().lowercase()
+                list.filter { bookmark ->
+                    bookmark.title.lowercase().contains(q) ||
+                            bookmark.note.lowercase().contains(q) ||
+                            bookmark.url.lowercase().contains(q)
+                }
+            }
+        }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()

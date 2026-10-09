@@ -1,5 +1,6 @@
 package com.mcode.trail.ui.bookmarks
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,12 +13,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
@@ -32,10 +32,10 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -53,6 +53,9 @@ fun HomeScreen(
     val bookmarks by viewModel.bookmarks.collectAsState()
     val query by viewModel.searchQuery.collectAsState()
 
+    // ← حفظ scroll position
+    val listState = rememberLazyListState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -62,7 +65,6 @@ fun HomeScreen(
     ) {
         Spacer(modifier = Modifier.height(16.dp))
 
-        // ===== الهيدر: العنوان + زر الوضع الليلي =====
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -80,13 +82,11 @@ fun HomeScreen(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                    )
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
             ) {
                 Icon(
                     imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
-                    contentDescription = if (isDarkTheme) "الوضع الفاتح" else "الوضع الليلي",
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
@@ -95,12 +95,11 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // ===== مربع البحث =====
         OutlinedTextField(
             value = query,
             onValueChange = { viewModel.updateSearchQuery(it) },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("البحث") },
+            placeholder = { Text("ابحث في أثرك...") },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.Search,
@@ -120,19 +119,22 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // ===== القائمة أو الشاشة الفاضية =====
         if (bookmarks.isEmpty()) {
-            EmptyState()
+            EmptyState(isSearching = query.isNotBlank())
         } else {
             LazyColumn(
+                state = listState,  // ← حفظ موقع السكرول
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
-                itemsIndexed(bookmarks, key = { _, bookmark -> bookmark.id }) { index, bookmark ->
+                items(
+                    items = bookmarks,
+                    key = { it.id },           // ← مفتاح فريد ثابت
+                    contentType = { "bookmark" } // ← لتحسين إعادة الاستخدام
+                ) { bookmark ->
                     BookmarkCard(
                         bookmark = bookmark,
-                        onClick = { onBookmarkClick(bookmark) },
-                        index = index
+                        onClick = { onBookmarkClick(bookmark) }
                     )
                 }
             }
@@ -141,7 +143,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun EmptyState() {
+private fun EmptyState(isSearching: Boolean = false) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -158,14 +160,17 @@ private fun EmptyState() {
             )
 
             Text(
-                text = "لسه مفيش حاجة محفوظة",
+                text = if (isSearching) "مفيش نتائج" else "لسه مفيش حاجة محفوظة",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
             Text(
-                text = "كل لينك عنده ذكرى\nشارك أي لينك مع أثر وهتلاقيه هنا",
+                text = if (isSearching)
+                    "جرب كلمة تانية"
+                else
+                    "كل لينك عنده ذكرى\nشارك أي لينك مع أثر وهتلاقيه هنا",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,

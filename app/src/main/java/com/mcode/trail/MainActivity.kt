@@ -2,6 +2,7 @@ package com.mcode.trail
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -14,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -46,8 +48,7 @@ fun TrailRoot() {
 
     val isDark = savedDarkMode ?: systemDark
 
-    // ===== حالة الـ Splash =====
-    var showSplash by remember { mutableStateOf(true) }
+    var showSplash by rememberSaveable { mutableStateOf(true) }
 
     TrailTheme(darkTheme = isDark) {
         Surface(
@@ -76,11 +77,18 @@ fun TrailNav(
     onToggleTheme: (Boolean) -> Unit,
     viewModel: BookmarkViewModel = viewModel()
 ) {
-    var selectedBookmarkId by remember { mutableStateOf<Long?>(null) }
+    // ← rememberSaveable بدل remember عشان تفضل عند الـ rotation
+    var selectedBookmarkId by rememberSaveable { mutableStateOf<Long?>(null) }
+
     val allBookmarks by viewModel.bookmarks.collectAsState()
 
     val currentBookmark = selectedBookmarkId?.let { id ->
         allBookmarks.find { it.id == id }
+    }
+
+    // ← BackHandler: لما تكون في Detail و المستخدم يعمل سحب/زر رجوع → يرجع للـ Home
+    BackHandler(enabled = currentBookmark != null) {
+        selectedBookmarkId = null
     }
 
     if (currentBookmark != null) {
